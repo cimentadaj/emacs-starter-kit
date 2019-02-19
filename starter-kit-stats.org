@@ -6,6 +6,7 @@ This is part of the [[file:starter-kit.org][Emacs Starter Kit]].
 This file provides settings for ESS and R. 
 
 * R and ESS
+
    Load ESS: Emacs Speaks Statistics, and several further tweaks for
  R. 
  
@@ -14,6 +15,13 @@ This file provides settings for ESS and R.
 #+begin_src emacs-lisp
   (require 'ess-site)
 #+end_src
+
+** Set R directory
+#+src-name: r-directory
+#+begin_src emacs-lisp
+(setq-default inferior-R-program-name "C:\\Program Files\\R\\R-3.5.2\\bin\\x64\\Rterm.exe")
+#+end_src
+
 ** Coding Hooks
 #+source: ide-ess
 #+begin_src emacs-lisp
@@ -48,6 +56,15 @@ If you use Rnw documents, tangle this section. (Rnw files have been mostly super
 
 #+end_src
 
+** Adds autoload for Rmd, Rnw and Snw
+#+source: load-rmd
+#+begin_src emacs-lisp
+(add-to-list 'auto-mode-alist '("\\.Snw" . poly-noweb+r-mode))
+(add-to-list 'auto-mode-alist '("\\.Rnw" . poly-noweb+r-mode))
+(add-to-list 'auto-mode-alist '("\\.Rmd" . poly-markdown+r-mode))
+(autoload 'r-mode "ess-site" "(Autoload)" t)
+#+end_src
+
 ** Use Knitr to process Sweave documents
 #+source: knitr-swv
 #+begin_src emacs-lisp
@@ -63,6 +80,32 @@ Polymode is a package that supports multiple modes inside a single buffer. It is
   (require 'poly-markdown)
 #+end_src
 
+** Adds autocompletion
+#+source: autocompletion
+#+begin_src emacs-lisp 
+(require 'auto-complete)
+(global-auto-complete-mode)
+(require 'auto-complete-config)
+(ac-config-default)
+(require 'ess-site)
+(setq ess-use-auto-complete t)
+(setq ac-auto-start 2)
+(setq ac-auto-show-menu 0.2)
+(ess-toggle-underscore nil)
+(setq ess-eval-visibly-p nil)
+
+(add-hook 'inferior-ess-mode-hook
+    '(lambda nil
+          (define-key inferior-ess-mode-map [\C-up]
+              'comint-previous-matching-input-from-input)
+          (define-key inferior-ess-mode-map [\C-down]
+              'comint-next-matching-input-from-input)
+          (define-key inferior-ess-mode-map [\C-x \t]
+              'comint-dynamic-complete-filename)
+     )
+ )
+
+#+end_src
 ** Make shift-enter to a lot in ESS.
  Use shift-enter to split window & launch R (if not running), execute
  highlighted region (if R running & area highlighted), or execute
@@ -72,42 +115,77 @@ Polymode is a package that supports multiple modes inside a single buffer. It is
 #+src-name: ess-shift-enter
 #+begin_src emacs-lisp
 (setq ess-ask-for-ess-directory nil)
+(add-hook 'inferior-ess-mode-hook
+    '(lambda nil
+          (define-key inferior-ess-mode-map [\C-up]
+              'comint-previous-matching-input-from-input)
+          (define-key inferior-ess-mode-map [\C-down]
+              'comint-next-matching-input-from-input)
+          (define-key inferior-ess-mode-map [\C-x \t]
+              'comint-dynamic-complete-filename)
+     )
+ )
+
+(setq ess-ask-for-ess-directory nil)
   (setq ess-local-process-name "R")
   (setq ansi-color-for-comint-mode 'filter)
   (setq comint-scroll-to-bottom-on-input t)
   (setq comint-scroll-to-bottom-on-output t)
   (setq comint-move-point-for-output t)
+
   (defun my-ess-start-R ()
     (interactive)
     (if (not (member "*R*" (mapcar (function buffer-name) (buffer-list))))
       (progn
-	(delete-other-windows)
-	(setq w1 (selected-window))
-	(setq w1name (buffer-name))
-	(setq w2 (split-window w1 nil t))
-	(R)
-	(set-window-buffer w2 "*R*")
-	(set-window-buffer w1 w1name))))
+        (delete-other-windows)
+        (setq w1 (selected-window))
+        (setq w1name (buffer-name))
+        (setq w2 (split-window w1 nil t))
+        (R)
+        (set-window-buffer w2 "*R*")
+        (set-window-buffer w1 w1name))))
+
   (defun my-ess-eval ()
     (interactive)
     (my-ess-start-R)
     (if (and transient-mark-mode mark-active)
-	(call-interactively 'ess-eval-region)
+        (call-interactively 'ess-eval-region)
       (call-interactively 'ess-eval-line-and-step)))
   (add-hook 'ess-mode-hook
-	    '(lambda()
-	       (local-set-key [(shift return)] 'my-ess-eval)))
+            '(lambda()
+               (local-set-key [(shift return)] 'my-ess-eval)))
   (add-hook 'inferior-ess-mode-hook
-	    '(lambda()
-	       (local-set-key [C-up] 'comint-previous-input)
-	       (local-set-key [C-down] 'comint-next-input)))
- (add-hook 'Rnw-mode-hook 
-          '(lambda() 
-             (local-set-key [(shift return)] 'my-ess-eval))) 
+            '(lambda()
+               (local-set-key [C-up] 'comint-previous-input)
+               (local-set-key [C-down] 'comint-next-input)))
+ (add-hook 'Rnw-mode-hook
+          '(lambda()
+             (local-set-key [(shift return)] 'my-ess-eval)))
   (require 'ess-site)
 #+end_src
+** Adds shortcut for starting R/Script
 
-** Add a Keyboard Shortcut for the Pipe Operator
+#+src-name: shortcut-start-r
+#+begin_src emacs-lisp
+(defun R-scratch ()
+  (interactive)
+  (progn
+    (delete-other-windows)
+    (setq new-buf (get-buffer-create "scratch.R"))
+    (switch-to-buffer new-buf)
+    (R-mode)
+    (setq w1 (selected-window))
+    (setq w1name (buffer-name))
+    (setq w2 (split-window w1 nil t))
+    (if (not (member "*R*" (mapcar (function buffer-name) (buffer-list))))
+        (R))
+    (set-window-buffer w2 "*R*")
+    (set-window-buffer w1 w1name)))
+
+(global-set-key (kbd "C-x 9") 'R-scratch)
+#+end_src
+
+** Add a Keyboard Shortcut for the Pipe/Assign Operator
 
 Assignment in ESS is shift-minus; by extension we'll use M-shift-minus for inserting the `%>%` operator.
 
@@ -123,6 +201,27 @@ Assignment in ESS is shift-minus; by extension we'll use M-shift-minus for inser
 (define-key ess-mode-map (kbd "M-_") 'my_pipe_operator)
 (define-key inferior-ess-mode-map (kbd "M-_") 'my_pipe_operator)
 
+(defun my_assign_operator ()
+  "R/ESS <- operator"
+  (interactive)
+  (insert "<- "))
+(define-key ess-mode-map (kbd "M-a") 'my_assign_operator)
+(define-key inferior-ess-mode-map (kbd "M-a") 'my_assign_operator)
+
+
+#+end_src
+
+** Add a Keyboard Shortcut for running Shinny app
+#+src-name: ess-shiny-shortcut
+#+begin_src emacs-lisp
+(defun ess-r-shiny-run-app (&optional arg)
+  "Interface for `shiny::runApp()'.
+   With prefix ARG ask for extra args."
+  (interactive)
+  (inferior-ess-r-force)
+  (ess-eval-linewise
+   "shiny::runApp(\".\")\n" "Running app" arg
+   '("" (read-string "Arguments: " "recompile = TRUE"))))
 #+end_src
 
 ** Add a Keyboard Shortcut for Rmd chunks
@@ -149,6 +248,7 @@ This is useful for when you have buffers with many similar names, as when there 
   (require 'uniquify)
   (setq uniquify-buffer-name-style 'post-forward-angle-brackets)  
 #+end_src
+
 ** lintr and flycheck
 [[https://github.com/jimhester/lintr][lintr]] checks your R code for style and syntax errors. It's an R library that integrates with [[http://www.flycheck.org][flycheck]]. You must install lintr from R. Flycheck can also check code in many other languages. You will need to install linters for them separately as well. See the flycheck documentation for details.
 
@@ -160,3 +260,11 @@ This is useful for when you have buffers with many similar names, as when there 
 
 #+end_src
 
+** Ibuffer shortcut
+#+source: ibuffer-shortcut
+#+begin_src emacs-lisp 
+
+; Slightly more debatable
+
+(global-set-key (kbd "C-x C-b") 'ibuffer)
+#+end_src

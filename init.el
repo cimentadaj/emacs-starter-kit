@@ -5,6 +5,9 @@
 ;; This is the first thing to get loaded.
 ;;
 
+;;(require 'helm-config)
+(add-to-list 'default-frame-alist '(fullscreen . maximized))
+
 (setq dotfiles-dir (file-name-directory (or (buffer-file-name) load-file-name)))
 (setq dotfiles-dir (file-name-directory (or load-file-name (buffer-file-name))))
 (setq autoload-file (concat dotfiles-dir "loaddefs.el"))
@@ -15,6 +18,7 @@
                                  "org" (expand-file-name
                                         "src" dotfiles-dir))))
 
+(setenv "GIT_ASKPASS" "git-gui--askpass")
 ;; Common Lisp compatability
 (require 'cl-lib)
 
