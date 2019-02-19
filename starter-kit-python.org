@@ -12,17 +12,71 @@ Support for the Python programming language.
 #+begin_src emacs-lisp
   (elpy-enable)
 
-  (setq python-shell-interpreter "jupyter"
-        python-shell-interpreter-args "console --simple-prompt"
-        python-shell-prompt-detect-failure-warning nil)
-  (add-to-list 'python-shell-completion-native-disabled-interpreters
-               "jupyter")
+  (add-hook 'python-mode-hook
+            (lambda ()
+              (setq imenu-create-index-function 'python-imenu-create-index)))
 
-    (when (require 'flycheck nil t)
-      (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
-      (add-hook 'elpy-mode-hook 'flycheck-mode))
+  (when (not package-archive-contents)
+    (package-refresh-contents))
+
+  (defvar myPackages
+    '(better-defaults
+      ein
+      elpy
+      flycheck
+      material-theme
+      py-autopep8))
+
+  (when (require 'elpy nil t)
+    (elpy-enable))
+  (setq elpy-rpc-backend "jedi")
+
+  (when (memq window-system '(mac ns))
+    (exec-path-from-shell-initialize))
+
+  ;; jedi
+  (add-hook 'python-mode-hook 'jedi:setup)
+  (setq jedi:complete-on-dot t)                 ; optional
+
+  (setq python-shell-interpreter "ipython"
+        python-shell-interpreter-args "-i --simple-prompt")
+
+  (setq python-fill-docstring-style 'django)
+
+  (when (require 'flycheck nil t)
+    (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
+    (add-hook 'elpy-mode-hook 'flycheck-mode))
 
 #+end_src
+
+** Shortcut for interactive Python session
+#+begin_src emacs-lisp
+
+(defun Py-scratch ()
+  (interactive)
+  (progn
+    (delete-other-windows)
+    (setq new-buf (get-buffer-create "scratch.py"))
+    (switch-to-buffer new-buf)
+    (python-mode)
+    (setq w1 (selected-window))
+    (setq w1name (buffer-name))
+    (setq w2 (split-window w1 nil t))
+    (if (not (member "*Python*" (mapcar (function buffer-name) (buffer-list))))
+        (run-python))
+    (set-window-buffer w2 "*Python*")
+    (set-window-buffer w1 w1name)))
+
+(global-set-key (kbd "C-x 8") 'Py-scratch)
+
+#+end_src
+
+** EIN Mode
+#+begin_src emacs-lisp
+  (require 'ein-notebook)
+  (define-key ein:notebook-mode-map (kbd "M-<return>") 'ein:worksheet-execute-cell-and-goto-next)
+#+end_src
+
 
 #+source: message-line
 #+begin_src emacs-lisp
