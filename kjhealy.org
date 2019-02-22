@@ -553,3 +553,27 @@ Some last tweaks.
 #+begin_src emacs-lisp
   (message "Starter Kit User File loaded.")
 #+end_src
+** Install packages
+#+srcname: install-packages
+#+begin_src emacs-lisp
+  (cond
+   ((>= 24 emacs-major-version)
+    (require 'exec-path-from-shell)
+    (package-initialize)
+    (add-to-list 'package-archives
+                 '("melpa-stable" . "http://stable.melpa.org/packages/") t)
+    (package-refresh-contents)
+    )
+   )
+
+(when (memq window-system '(mac ns x))
+  (exec-path-from-shell-initialize))
+
+(require 'ssh)
+(add-hook 'ssh-mode-hook
+          (lambda ()
+            (setq ssh-directory-tracking-mode t)
+            (shell-dirtrack-mode t)
+            (setq dirtrackp nil)))
+
+#+end_src

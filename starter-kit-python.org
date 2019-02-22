@@ -71,10 +71,32 @@ Support for the Python programming language.
 
 #+end_src
 
+** Execute code in .py send to python
+#+begin_src emacs-lisp
+
+(defun py-eval-region-or-line-and-step ()
+  (interactive)
+  (if (and transient-mark-mode mark-active
+           (> (region-end) (region-beginning)))
+      (elpy-shell-send-region-or-buffer)
+    (progn
+      (end-of-line)
+      (let ((eol (point)))
+        (beginning-of-line)
+        (python-shell-send-region (point) eol))
+      (python-nav-forward-statement)
+      )))
+
+;; Map py-eval-region-or-line-and-step to M-ret because that's how I have it set
+;; for ESS
+(define-key python-mode-map (kbd "M-<return>") 'py-eval-region-or-line-and-step)
+
+#+end_src
+
 ** EIN Mode
 #+begin_src emacs-lisp
   (require 'ein-notebook)
-  (define-key ein:notebook-mode-map (kbd "M-<return>") 'ein:worksheet-execute-cell-and-goto-next)
+  (define-key ein:notebook-mode-map (kbd "S-<return>") 'ein:worksheet-execute-cell-and-goto-next)
 #+end_src
 
 

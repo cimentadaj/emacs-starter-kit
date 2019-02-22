@@ -22,6 +22,9 @@
 ;; Common Lisp compatability
 (require 'cl-lib)
 
+(when (memq window-system '(mac ns x))
+  (exec-path-from-shell-initialize))
+
 ;; Temporary workaround for eshell bug in 24.3.1
 ;; http://zpcat.blogspot.com/2013/08/configure-eshell-mode-after-upgrade.html
 (require 'esh-mode)
