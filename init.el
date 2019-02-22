@@ -93,6 +93,9 @@
 ;;; Higher garbage collection threshold
 (setq gc-cons-threshold 20000000)
 
+;;; Adds line numbering
+(global-linum-mode t)
+
 ;;; init.el ends here
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
